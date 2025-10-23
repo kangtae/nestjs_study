@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -53,13 +54,11 @@ export class PostsController {
   constructor(private readonly postsService: PostsService) {}
   @Get()
   getPosts() {
-    return posts;
+    return this.postsService.getAllPosts();
   }
   @Get(':id')
   getPost(@Param('id') id: string) {
-    const post = posts.find((post) => post.id === +id);
-    if (!post) throw new NotFoundException();
-    return post;
+    return this.postsService.getPostById(+id);
   }
 
   @Post()
@@ -68,18 +67,7 @@ export class PostsController {
     @Body('title') title: string,
     @Body('content') content: string,
   ) {
-    const post = {
-      id: posts[posts.length - 1].id + 1,
-      author,
-      title,
-      content,
-      likeCount: 0,
-      commentCount: 0,
-    };
-
-    posts = [...posts, post];
-
-    return post;
+    return this.postsService.createPost(author, title, content);
   }
 
   @Put(':id')
@@ -89,31 +77,14 @@ export class PostsController {
     @Body('title') title?: string,
     @Body('content') content?: string,
   ) {
-    const post = posts.find((post) => post.id === +id);
-
-    if (!post) {
-      throw new NotFoundException();
+    if (author === undefined || title === undefined || content === undefined) {
+      throw new BadRequestException('author, title, and content are required.');
     }
-
-    if (author) {
-      post.author = author;
-    }
-    if (title) {
-      post.title = title;
-    }
-    if (content) {
-      post.content = content;
-    }
-
-    posts = posts.map((prevPost) => (prevPost.id === +id ? post : prevPost));
-
-    return post;
+    return this.postsService.updatePost(+id, author, title, content);
   }
+
   @Delete(':id')
   deletePost(@Param('id') id: string) {
-    const post = posts.find((post) => post.id === +id);
-    if (!post) throw new NotFoundException();
-    posts = posts.filter((post) => post.id !== +id);
-    return id;
+    return this.postsService.deletePost(+id);
   }
 }
